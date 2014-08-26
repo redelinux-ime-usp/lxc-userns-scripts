@@ -1,3 +1,5 @@
+SUBDIRS = hooks lib
+
 bin_PROGRAMS = uidmapshift
 uidmapshift_SOURCES = uidmapshift.c
 
