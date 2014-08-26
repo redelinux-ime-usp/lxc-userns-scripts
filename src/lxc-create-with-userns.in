@@ -10,35 +10,87 @@ done
 
 ###
 
+confirm()
+{
+    if (( yes  )); then
+        return 0
+    elif ! [[ -t 1 ]]; then
+        err "confirmation needed but input is not a terminal."
+        return 1
+    else
+        read -p "$1 [y/n] " -r
+        case "$REPLY" in
+            [Yy])
+                return 0
+            ;;
+            [Yy][Ee][Ss])
+                return 0
+        esac
+
+        return 1
+    fi
+}
+
 program=$(basename "$0")
 
 print_help()
 {
-    echo "Usage: $program container-name distribution release [config-file] [-- lxc-options...]" >&2
+    cat >&2 <<EOF
+Usage: ${program} [-h] -n container-name -d distribution -r release 
+    [-f config-file [-x]] [-- lxc-options...]
+Options:
+    -h
+                        Print help
+    -n container-name
+                        Name of the container to create
+    -d distribution     
+                        Distribution to use (see lxc-create)
+    -r distribution     
+                        Release to use for distribution
+    -f config-file      
+                        Use a custom config file in addition to the default
+                        configuration (usually /etc/lxc/default.conf)
+    -x                  
+                        When specifying a config file, make it the sole 
+                        configuration source, without prepending any defaults
+    -y
+                        Don't prompt for confirmation
+    lxc-options         
+                        Options to forward to lxc-create
+EOF
 }
 
-argn=0
-while true; do
-    if (( $# == 0 )); then
-        break
-    fi
+no_default_config=0
+yes=0
 
-    if [[ "$1" == -- ]]; then
-        shift
-        break
-    fi
-
-    case "$argn" in
-    0) name="$1" ;;
-    1) dist="$1" ;;
-    2) release="$1" ;;
-    3) config_file="$1" ;;
-    *) print_help; exit 1
+while getopts "hn:d:r:f:xy" opt; do
+    case "$opt" in
+    h) print_help; exit 1 ;;
+    n) name="$OPTARG" ;;
+    d) dist="$OPTARG" ;;
+    r) release="$OPTARG" ;;
+    f) config_file="$OPTARG" ;;
+    x) no_default_config=1 ;;
+    y) yes=1 ;;
+    \?)
+        err "Invalid option: -$OPTARG"
+        exit 1
+    ;;
+    :)
+        err "Option -$OPTARG requires an argument."
+        exit 1
+    ;;
     esac
-
-    (( ++argn ))
-    shift
 done
+
+shift $(( OPTIND - 1 ))
+
+if (( $# )) && [[ "$1" != -- ]]; then
+    err "Invalid parameters: you must precede lxc options with double dashes"
+    exit 1
+else
+    shift
+fi
 
 if [[ -z "$dist" || -z "$release" ]]; then
     print_help
@@ -46,13 +98,13 @@ if [[ -z "$dist" || -z "$release" ]]; then
 fi
 
 if [[ -n "$config_file"  && ! -f "$config_file" ]]; then
-    echo "Error: config file doesn't exist" >&2
+    err "config file doesn't exist"
     exit 1
 fi
 
 name_re='^[[:alpha:]][[:alnum:]]*$'
 if ! [[ "$name" =~ $name_re ]]; then
-    echo "Error: invalid name." >&2
+    err "invalid container name"
     exit 1
 fi
 
@@ -66,7 +118,7 @@ ubuntu)
     lxc_release="trusty"
 ;;
 *)
-    echo "Error: invalid distribution." >&2
+    err "invalid distribution."
     exit 1
 esac
 
@@ -75,7 +127,7 @@ esac
 lxc_path=$(lxc-config lxc.lxcpath)
 container_path="${lxc_path}/${name}"
 if [[ -e "$container_path" ]]; then
-    echo "Error: container path ${container_path} already exists." >&2
+    err "container path ${container_path} already exists"
     exit 1
 fi
 
@@ -97,11 +149,13 @@ printable_params()
     done
 }
 
-default_conf=$(lxc-config lxc.default_config)
-if [[ -f "$default_conf" ]]; then
-    cat "$default_conf" > "$cfg_path"
+if ! (( no_default_config )) \
+    && default_conf=$(lxc-config lxc.default_config) \
+    && [[ -f "$default_conf" ]]
+then
+    cp "$default_conf" "$cfg_path"
 else
-    echo > "$cfg_path"
+    > "$cfg_path"
 fi
 
 if [[ -n "$config_file" ]]; then
@@ -111,11 +165,25 @@ fi
 lxc_cfg_userns_set "$cfg_path" "new" "new"
 
 cat >> "$cfg_path" <<EOF
-lxc.hook.clone = ${src_dir}/hooks/userns-convert
-lxc.hook.clone = ${src_dir}/hooks/sysprep
+lxc.hook.clone = @pkgdatadir@/hooks/userns-convert
+lxc.hook.clone = @pkgdatadir@/hooks/sysprep
 EOF
 
+if ! (( yes )) && confirm "Do you wish to verify the configuration file before creation?"; then
+    editor="${VISUAL:-${EDITOR:-vi}}}"
+    if ! $editor "$cfg_path"; then
+        err "editor exited with error"
+        exit 1
+    fi
+fi
+
+if ! confirm "Create container?"
+    exit 1
+fi
+
 id_map_add_from_lxc_cfg "$cfg_path"
+
+trap id_map_rollback EXIT
 
 if lxc-create -n "${name}" -f "${cfg_path}" -B zfs \
    -o "${cfg_dir}/create.log" -l INFO \
@@ -125,3 +193,5 @@ then
 else
     id_map_rollback
 fi
+
+trap - EXIT
