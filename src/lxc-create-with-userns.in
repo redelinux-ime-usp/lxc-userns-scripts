@@ -60,6 +60,11 @@ Options:
 EOF
 }
 
+if ! (( $# )); then
+    print_help
+    exit 1
+fi
+
 no_default_config=0
 yes=0
 
@@ -85,11 +90,13 @@ done
 
 shift $(( OPTIND - 1 ))
 
-if (( $# )) && [[ "$1" != -- ]]; then
-    err "Invalid parameters: you must precede lxc options with double dashes"
-    exit 1
-else
-    shift
+if (( $# )); then
+    if [[ "$1" != -- ]]; then
+        err "Invalid parameters: you must precede lxc options with double dashes"
+        exit 1
+    else
+        shift
+    fi
 fi
 
 if [[ -z "$dist" || -z "$release" ]]; then
