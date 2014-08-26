@@ -49,6 +49,8 @@ Options:
                         Distribution to use if template is 'download'
     -r release     
                         Release to use if template is 'download'
+    -a arch             
+                        Architecture to use if template is 'download'
     -f config-file      
                         Use a custom config file in addition to the default
                         configuration (usually /etc/lxc/default.conf)
@@ -72,14 +74,16 @@ fi
 no_default_config=0
 yes=0
 template=download
+arch=$(dpkg --print-architecture)
 
-while getopts "hn:t:d:r:f:xy" opt; do
+while getopts "hn:t:d:r:a:f:xy" opt; do
     case "$opt" in
     h) print_help; exit 1 ;;
     n) name="$OPTARG" ;;
     t) template="$OPTARG" ;;
     d) dist="$OPTARG" ;;
     r) release="$OPTARG" ;;
+    a) arch="$OPTARG" ;;
     f) config_file="$OPTARG" ;;
     x) no_default_config=1 ;;
     y) yes=1 ;;
@@ -134,12 +138,10 @@ if [[ "$template" == download ]]; then
     
     case "$dist" in
     debian)
-        lxc_dist="debian"
-        lxc_release="wheezy"
+        [[ -n "$release" ]] || release="wheezy"
     ;;
     ubuntu)
-        lxc_dist="ubuntu"
-        lxc_release="trusty"
+        [[ -n "$release" ]] || release="trusty"
     ;;
     *)
         err_m "unknown distribution"
@@ -212,7 +214,7 @@ trap id_map_rollback EXIT
 
 template_params=''
 if [[ "$template" == download ]]; then
-    template_params="-d ${lxc_dist} -r ${lxc_release}"
+    template_params="-d ${dist} -r ${release} -a ${arch}"
 fi
 
 if lxc-create -n "${name}" -f "${cfg_path}" -B zfs \
