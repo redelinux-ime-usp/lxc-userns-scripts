@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -e
+shopt -s dotglob
+
+for lib in misc userns; do
+    . "@datadir@/@PACKAGE_NAME@/${lib}/misc.bash"
+done
+
+###
+
+lxc_hook_check_params "$@"
+
+case "$lxc_hook_type" in
+clone|sysprep) ;;
+*)
+    err_m "invalid hook type '${lxc_hook_type}'"
+    exit 1
+esac
+
+# Run in the user namespace if needed
+
+if ! lxc_userns_maybe_reexec "$LXC_CONFIG_FILE" -- "$0" "$@"; then
+    err_m "failed retrieving userns mapping from container"
+    exit 1
+fi
+
+echo "Setting up hostname"
+
+echo "$container" > "${lxc_rootfs}/etc/hostname"
+sed -i -r "s/ ${LXC_SRC_NAME}([[:blank:]]|\$)/ ${container}\\1/" \
+ "${lxc_rootfs}/etc/hosts"
+
+###
+
+echo "Cleaning shell history"
+
+rm -f ${lxc_rootfs}/root/.*history
+
+###
+
+echo "Cleaning up DHCP leases"
+
+rm -f ${lxc_rootfs}/var/lib/{dhcp,dhclient}/*
+
+###
+
+echo "Cleaning temporary dirs"
+
+rm -rf ${lxc_rootfs}/{tmp,var/tmp}/*
+
+###
+
+echo "Cleaning udev persistent net rules"
+
+rm -f ${lxc_rootfs}/etc/udev/*-persistent-net.rules
+
+###
+
+echo "Cleaning up SSH known hosts"
+
+rm -f "${lxc_rootfs}/root/.ssh/known_hosts"
+
+echo "Recreating SSH host keys"
+
+rm -f ${lxc_rootfs}/etc/ssh/*_host_*
+
+ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_rsa_key" -N '' -t rsa
+ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_dsa_key" -N '' -t dsa
+ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_ecdsa_key" -N '' -t ecdsa -b 521

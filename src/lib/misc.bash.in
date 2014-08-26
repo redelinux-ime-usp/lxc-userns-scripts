@@ -1,0 +1,64 @@
+info_m() { echo "Info:" "$@" >&2; }
+err_m() { echo "Error:" "$@" >&2; }
+warn_m() { echo "Warn:" "$@" >&2; }
+
+is_num()
+{
+    local s
+    for s in "$@"; do
+        expr "$s" 1>/dev/null 2>&1
+        if (( $? == 2 )); then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+lxc_fs_check_dir()
+{
+    if [[ -z "$1" || ! -d "$1" ]]; then
+        err_m "rootfs is not a directory"
+        return 1
+    fi
+
+    return 0
+}
+
+lxc_cfg_check_file()
+{
+    if [[ -z "$1" || ! -f "$1" ]]; then
+        err_m "invalid or inaccessible config file"
+        return 1
+    fi
+
+    return 0
+}
+
+lxc_hook_check_params()
+{
+    local _container="$1" _section="$2" _hook_type="$3" rootfs
+
+    if [[ -z "$_container" || "$_section" != lxc  ]]; then
+        err_m "Invalid parameters"
+        return 1
+    fi
+    
+    # Workaround for bug with ZFS where the mount path doesn't make sense, but
+    # the device path contains the correct director for the rootfs
+
+    if [[ -d "$LXC_ROOTFS_PATH" ]]; then
+        rootfs="$LXC_ROOTFS_PATH"
+    else
+        rootfs="$LXC_ROOTFS_MOUNT"
+    fi
+
+    lxc_fs_check_dir "$rootfs" || return 1
+
+    eval "lxc_hook_container"=\$_container
+    eval "lxc_hook_type"=\$_hook_type
+    eval "lxc_rootfs"=\$rootfs
+
+    return 0
+}
+

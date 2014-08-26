@@ -1,0 +1,91 @@
+for lib in misc id_map cfg; do
+    . "@pkgdatadir@/lib/${lib}.bash" || exit 1
+done
+
+lxc_userns_currently_in_ns()
+{
+    [ -e /proc/self/uid_map ] || return 1
+    [ "$(wc -l /proc/self/uid_map | awk '{ print $1 }')" -eq 1 ] || return 0
+    
+    local line=$(awk '{ print $1 " " $2 " " $3 }' /proc/self/uid_map)
+    [ "$line" = "0 0 4294967295" ] && return 1
+    return 0
+}
+
+lxc_userns_maybe_reexec()
+{
+    local config_file="$1"
+    shift
+
+    [[ "$1" != -- ]] || shift
+    (( $# )) || return 1
+
+    lxc_cfg_check_file "$config_file" || return 1
+
+    lxc_userns_currently_in_ns && return 0
+
+    local uid_map gid_map
+    lxc_cfg_userns_get "$config_file" uid_map gid_map || return 1
+
+    [[ -z "$uid_map" && -z "$gid_map" ]] && return 0
+    
+    uid_map=$(echo "$uid_map" | tr ' ' ':')
+    gid_map=$(echo "$gid_map" | tr ' ' ':')
+    
+    exec lxc-usernsexec \
+     ${uid_map:+-m u:${uid_map}} \
+     ${gid_map:+-m g:${gid_map}} \
+     -- "$@"
+}
+
+lxc_fs_userns_apply()
+(
+    set -e
+
+    local config_file="$1" rootfs="$2"
+    lxc_cfg_check_file "$config_file"
+    
+    local uid_map gid_map
+    lxc_cfg_userns_get "$config_file" uid_map gid_map
+
+    lxc_fs_check_dir "$rootfs"
+    
+    # Get current UID and GID for rootfs, and assume their are the base IDs
+    # of the tree        
+    local rootfs_stat=$(stat -c "%g %u" "$rootfs")
+    local rootfs_uid rootfs_gid
+    read -r rootfs_uid rootfs_gid <<< "$rootfs_stat"
+
+    # If UIDs are mapped, take the mapping from the container, replace the 
+    # source UID (usually 0) with the current UID for the root fs before doing
+    # the ownership shifting
+    if [[ -n "$uid_map" ]]; then
+        local uid_src uid_dest uid_range
+        id_map_parse "$uid_map" uid_src uid_dest uid_range
+        uid_map="${rootfs_uid} ${uid_dest} ${uid_range}"
+    fi
+
+    # Same as above for GIDs
+    if [[ -n "$gid_map" ]]; then
+        local gid_src gid_dest gid_range
+        id_map_parse "$gid_map" gid_src gid_dest gid_range
+        gid_map="${rootfs_gid} ${gid_dest} ${gid_range}"
+    fi
+
+    # Optimize shifting if UID and GID maps are equal, and don't do anything
+    # if no mappings are specified
+    if [[ -z "$uid_map" && -z "$gid_map" ]]; then
+        return 0
+    fi
+
+    local uidmapshift=$(lxc_fs_check_uidmapshift)
+ 
+    if [[ "$uid_map" == "$gid_map" ]]; then
+        $uidmapshift -b "$rootfs" $uid_map
+    else
+        [[ -z "$uid_map" ]] || $uidmapshift -u "$rootfs" $uid_map
+        [[ -z "$gid_map" ]] || $uidmapshift -g "$rootfs" $gid_map
+    fi
+
+    return 0
+)

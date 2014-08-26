@@ -1,0 +1,144 @@
+. "@datadir@/@PACKAGE_NAME@/lib/misc.bash" || exit 1
+
+ID_MAP_USER_FILE=/etc/subuid
+ID_MAP_USER_FILE_BKP="${ID_MAP_USER_FILE}.lxc-backup"
+
+ID_MAP_GROUP_FILE=/etc/subgid
+ID_MAP_GROUP_FILE_BKP="${ID_MAP_GROUP_FILE}.lxc-backup"
+
+ID_MAP_DEFAUlT_RANGE=100000
+
+id_map_next_available_id()
+{
+    local file="$1" id_range="$2"
+
+    if [[ -z "$file" || ! -f "$file" ]]; then
+        err_m "invalid or inaccesible idmap file '${file}'"
+        return 1
+    fi
+
+    if ! (( id_range )); then
+        err_m "invalid idmap range '${id_range}'"
+        return 1
+    fi
+
+    local -i id_global_start=$ID_MAP_DEFAUlT_RANGE id_max=0 entry_max=0
+
+    while IFS=':' read -r entry_user id_start id_count; do
+        entry_max=$(( id_start + id_count )) 
+        if (( entry_max > id_max )); then
+            (( id_max = entry_max ))
+        fi
+    done < "$file"
+
+    if (( id_max == 0 )); then
+        (( id_max = id_global_start ))
+    else
+        local -i remainder=$(( id_max % id_range ))
+        if (( remainder != 0 )); then
+            (( id_max += id_chunk - remainder ))
+        fi
+    fi
+
+    echo "$id_max"
+    return 0
+}
+
+id_map_user_next_available_id()
+{
+    id_map_next_available_id "$ID_MAP_USER_FILE" "$@"
+}
+
+id_map_group_next_available_id()
+{
+    id_map_next_available_id "$ID_MAP_GROUP_FILE" "$@"
+}
+
+id_map_add()
+{
+    local file="$1" user="$2" dest="$3" range="$4"
+    if [[ -z "$user" ]] || ! is_num "$dest" "$range"; then
+        return 1
+    fi
+
+    local line="${user}:${dest}:${range}"
+    if grep -q -F -x "$line" "$file"; then
+        return 0
+    fi
+
+    (
+        cat "$file"
+        echo "$line"
+    ) > "${file}.tmp" || return 1
+
+    mv "${file}.tmp" "$file" || return 1
+    return 0
+}
+
+id_map_user_add()
+{
+    id_map_add "$ID_MAP_USER_FILE" "$@"
+}
+
+id_map_group_add()
+{
+    id_map_add "$ID_MAP_GROUP_FILE" "$@"
+}
+
+id_map_add_from_lxc_cfg()
+(
+    set -e
+
+    local config_file="$1"
+    lxc_cfg_check_file "$config_file"
+
+    local uid_map gid_map
+    lxc_cfg_userns_get "$config_file" uid_map gid_map
+
+    if [[ -n "$uid_map" ]]; then
+        local uid_src uid_dest uid_range
+        id_map_parse "$uid_map" uid_src uid_dest uid_range
+
+        cp "$ID_MAP_USER_FILE" "$ID_MAP_USER_FILE_BKP"
+        id_map_user_add root $uid_dest $uid_range
+    fi
+
+    if [[ -n "$gid_map" ]]; then
+        local gid_src gid_dest gid_range
+        id_map_parse "$gid_map" gid_src gid_dest gid_range
+
+        cp "$ID_MAP_GROUP_FILE" "$ID_MAP_GROUP_FILE_BKP"
+        id_map_group_add root $gid_dest $gid_range
+    fi
+
+    return 0
+)
+
+id_map_commit()
+{
+    rm -f "$ID_MAP_USER_FILE_BKP" "$ID_MAP_GROUP_FILE_BKP"
+}
+
+id_map_rollback()
+{
+    mv "$ID_MAP_USER_FILE_BKP" "$ID_MAP_USER_FILE"
+    mv "$ID_MAP_GROUP_FILE_BKP" "$ID_MAP_GROUP_FILE"
+}
+
+id_map_parse()
+{
+    local map="$1" src_var="$2" dest_var="$3" range_var="$4"
+    if [[ -z "$map" || -z "$src_var" || -z "$dest_var" || -z "$range_var" ]]; then
+        return 1
+    fi
+
+    local _src _dest _range
+    read -r _src _dest _range <<< "$map" || return 1
+    is_num "$_src" "$_dest" "$_range" || return 1
+
+    eval "$src_var"=\$_src
+    eval "$dest_var"=\$_dest
+    eval "$range_var"=\$_range
+
+    return 0
+}

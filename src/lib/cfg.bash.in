@@ -1,0 +1,101 @@
+. "@datadir@/@PACKAGE_NAME@/lib/misc.bash" || exit 1
+
+lxc_cfg_key_regex()
+{
+    echo "^${1}[[:blank:]]*="
+}
+
+lxc_cfg_get()
+{
+    local file="$1" key="$2"
+    grep -E "$(_lxc_cfg_key_regex "$key")" "$file" | \
+        sed -r 's/^[^=]+=[[:blank:]]*//'
+}
+
+lxc_cfg_userns_get()
+{
+    local config_file="$1" uid_var="$2" gid_var="$3"
+    lxc_cfg_check_file "$config_file" || return 1
+
+    if [[ -z "$uid_var" || -z "$gid_var" ]]; then
+        err_m "$FUNCNAME: invalid output variables"
+        return 1
+    fi
+
+    local _uid_range _gid_range idmap_line
+
+    while read -r idmap_line; do
+        if [[ "$idmap_line" == b* ]]; then
+            _uid_range="${idmap_line#b }"
+            _gid_range="$_uid_range"
+        elif [[ "$idmap_line" == u* ]]; then
+            _uid_range="${idmap_line#u }"
+        elif [[ "$idmap_line" == g* ]]; then
+            _gid_range="${idmap_line#g }"
+        else
+            warn_m "invalid lxc.id_map value of '${idmap_line}' in '${file}', skipping"
+            continue
+        fi
+
+        if [[ -n "$_uid_range" && -n "$_gid_range" ]]; then
+            break
+        fi
+    done < <( lxc_cfg_get "$config_file" lxc.id_map )
+
+    eval "$uid_var"=\$_uid_range
+    eval "$gid_var"=\$_gid_range
+
+    return 0
+}
+
+lxc_cfg_userns_set()
+(
+    set -e
+
+    local config_file="$1" uid_map="$2" gid_map="$3"
+    lxc_cfg_check_file "$config_file" || return 1
+
+    local -i uid_src uid_dest uid_range gid_src gid_dest git_range
+
+    if [[ "$uid_map" == "new" ]]; then
+        uid_src=0
+        uid_range=$ID_MAP_DEFAUlT_RANGE
+        uid_dest=$(id_map_user_next_available_id $uid_range) || return 1
+    elif [[ -n "$uid_map" ]]; then
+        if ! id_map_parse "$uid_map" uid_src uid_dest uid_range; then
+            err_m "invalid new UID map '${uid_map}' (file: '${config_file}')"
+            return 1
+        fi
+    else
+        return 1
+    fi
+
+    if [[ "$gid_map" == "new" ]]; then
+        gid_src=0
+        gid_range=$ID_MAP_DEFAUlT_RANGE
+        gid_dest=$(id_map_user_next_available_id $gid_range) || return 1
+    elif [[ -n "$gid_map" ]]; then
+        if ! id_map_parse "$gid_map" gid_src gid_dest gid_range; then
+            err_m "invalid new GID map '${gid_map}' (file: '${config_file}')"
+            return 1
+        fi
+    else
+        return 1
+    fi
+
+    (
+        sed "$config_file" \
+         -e "/$(_lxc_cfg_key_regex lxc.id_map)/d" \
+         -e "/^# User namespace configuration/d" \
+         | perl -0pe 's/\s+\z//s'
+
+        echo; echo
+        echo "# User namespace configuration"
+        echo "lxc.id_map = u ${uid_src} ${uid_dest} ${uid_range}"
+        echo "lxc.id_map = g ${gid_src} ${gid_dest} ${gid_range}"
+    ) > "${config_file}.tmp"
+
+    mv "${config_file}.tmp" "${config_file}"
+
+    return 0
+)

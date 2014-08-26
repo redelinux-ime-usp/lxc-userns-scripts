@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -e
+
+for lib in misc cfg userns; do
+    . "@pkgdatadir@/${lib}/misc.bash"
+done
+
+###
+
+lxc_hook_check_params "$@"
+if [[ "$lxc_hook_type" != clone ]]; then
+    exit 1
+fi
+
+lxc_cfg_userns_get "$LXC_CONFIG_FILE" uid_map gid_map
+
+if [[ -z "$uid_map" && -z "$gid_map" ]]; then
+    info_m "No existing user or group mappings found"
+else
+    if [[ -n "$new_uid_map" ]]; then
+        info_m "Previous user mapping: ${uid_map}"
+    fi
+
+    if [[ -n "$new_gid_map" ]]; then
+        info_m "Previous group mapping: ${gid_map}"
+    fi
+fi
+
+lxc_cfg_userns_set "$LXC_CONFIG_FILE" "new" "new"
+lxc_cfg_userns_get "$LXC_CONFIG_FILE" new_uid_map new_gid_map
+
+if [[ -n "$new_uid_map" ]]; then
+    info_m "New user mapping: ${new_uid_map}"
+fi
+
+if [[ -n "$new_gid_map" ]]; then
+    info_m "New group mapping: ${new_gid_map}"
+fi
+
+lxc_fs_userns_apply "$LXC_CONFIG_FILE" "$lxc_rootfs"
