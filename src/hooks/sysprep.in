@@ -6,7 +6,7 @@ shopt -s dotglob
 prefix="@prefix@"
 datarootdir="@datarootdir@"
 for lib in misc userns; do
-    . "@pkgdatadir@/lib/${lib}.bash"
+    . "@pkgdatadir@/lib/${lib}.sh"
 done
 
 ###

@@ -1,6 +1,6 @@
 prefix="@prefix@"
 datarootdir="@datarootdir@"
-. "@pkgdatadir@/lib/misc.bash" || exit 1
+. "@pkgdatadir@/lib/misc.sh" || exit 1
 
 ID_MAP_USER_FILE=/etc/subuid
 ID_MAP_USER_FILE_BKP="${ID_MAP_USER_FILE}.lxc-backup"

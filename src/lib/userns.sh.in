@@ -1,7 +1,7 @@
 prefix="@prefix@"
 datarootdir="@datarootdir@"
 for lib in misc id_map cfg; do
-    . "@pkgdatadir@/lib/${lib}.bash" || exit 1
+    . "@pkgdatadir@/lib/${lib}.sh" || exit 1
 done
 
 lxc_userns_currently_in_ns()

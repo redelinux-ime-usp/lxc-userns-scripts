@@ -8,17 +8,17 @@ AC_PROG_CC
 AC_SUBST(pkgdatadir, $datadir/[AC_PACKAGE_NAME])
 
 AC_CONFIG_FILES([
-    Makefile
-    src/Makefile
-    src/lxc-create-container
-    src/hooks/Makefile
-    src/hooks/sysprep
-    src/hooks/userns-convert
-    src/lib/Makefile
-    src/lib/cfg.bash
-    src/lib/id_map.bash
-    src/lib/misc.bash
-    src/lib/userns.bash
+	Makefile
+	src/Makefile
+	src/lxc-create-container
+	src/hooks/Makefile
+	src/hooks/sysprep
+	src/hooks/userns-convert
+	src/lib/Makefile
+	src/lib/cfg.sh
+	src/lib/id_map.sh
+	src/lib/misc.sh
+	src/lib/userns.sh
 ])
 
 AC_OUTPUT
