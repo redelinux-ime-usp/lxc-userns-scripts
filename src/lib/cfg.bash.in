@@ -1,4 +1,6 @@
-. "@datadir@/@PACKAGE_NAME@/lib/misc.bash" || exit 1
+prefix="@prefix@"
+datarootdir="@datarootdir@"
+. "@pkgdatadir@/lib/misc.bash" || exit 1
 
 lxc_cfg_key_regex()
 {

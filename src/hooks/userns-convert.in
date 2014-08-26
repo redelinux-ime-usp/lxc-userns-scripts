@@ -2,8 +2,10 @@
 
 set -e
 
+prefix="@prefix@"
+datarootdir="@datarootdir@"
 for lib in misc cfg userns; do
-    . "@pkgdatadir@/${lib}/misc.bash"
+    . "@pkgdatadir@/lib/${lib}.bash"
 done
 
 ###

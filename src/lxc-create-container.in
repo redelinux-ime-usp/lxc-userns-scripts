@@ -2,8 +2,10 @@
 
 set -e
 
+prefix="@prefix@"
+datarootdir="@datarootdir@"
 for lib in cfg id_map; do
-    . "${pkgdatadir}/${lib}.bash"
+    . "${pkgdatadir}/lib/${lib}.bash"
 done
 
 ###

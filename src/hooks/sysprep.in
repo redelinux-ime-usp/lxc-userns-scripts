@@ -3,8 +3,10 @@
 set -e
 shopt -s dotglob
 
+prefix="@prefix@"
+datarootdir="@datarootdir@"
 for lib in misc userns; do
-    . "@datadir@/@PACKAGE_NAME@/${lib}/misc.bash"
+    . "@pkgdatadir@/lib/${lib}.bash"
 done
 
 ###

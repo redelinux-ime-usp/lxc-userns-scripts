@@ -3,4 +3,3 @@ uidmapshift_SOURCES = uidmapshift.c
 
 bin_SCRIPTS = \
     lxc-create-container
-
