@@ -50,7 +50,8 @@ if [[ -n "$config_file"  && ! -f "$config_file" ]]; then
     exit 1
 fi
 
-if ! [[ "$name" =~ '^[[:alpha:]][[:alnum:]]*$' ]]; then
+name_re='^[[:alpha:]][[:alnum:]]*$'
+if ! [[ "$name" =~ $name_re ]]; then
     echo "Error: invalid name." >&2
     exit 1
 fi
