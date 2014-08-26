@@ -184,7 +184,7 @@ if ! (( yes )) && confirm "Do you wish to verify the configuration file before c
     fi
 fi
 
-if ! confirm "Create container?"
+if ! confirm "Create container?"; then
     exit 1
 fi
 
