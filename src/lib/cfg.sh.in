@@ -12,7 +12,7 @@ lxc_cfg_key_regex()
 lxc_cfg_get()
 {
     local file="$1" key="$2"
-    grep -E "$(_lxc_cfg_key_regex "$key")" "$file" | \
+    grep -E "$(lxc_cfg_key_regex "$key")" "$file" | \
         sed -r 's/^[^=]+=[[:blank:]]*//'
 }
 
@@ -89,7 +89,7 @@ lxc_cfg_userns_set()
 
     (
         sed "$config_file" \
-         -e "/$(_lxc_cfg_key_regex lxc.id_map)/d" \
+         -e "/$(lxc_cfg_key_regex lxc.id_map)/d" \
          -e "/^# User namespace configuration/d" \
          | perl -0pe 's/\s+\z//s'
 
