@@ -36,8 +36,10 @@ program=$(basename "$0")
 print_help()
 {
     cat >&2 <<EOF
-Usage: ${program} [-h] -n container-name [-t template] [-d distribution -r release] 
-    [-f config-file [-x]] [-- lxc-options...]
+Usage: ${program} [-h] -n container-name [-t template] [-B backing-store]
+    [-d distribution -r release [-a arch]] 
+    [-f config-file [-x]]
+    [lxc-create-options] [-- lxc-template-options]
 Options:
     -h
                         Print help
@@ -46,11 +48,11 @@ Options:
     -t template
                         Template type to use (default: 'download')
     -d distribution     
-                        Distribution to use if template is 'download'
+                        Distribution to use (if template is 'download')
     -r release     
-                        Release to use if template is 'download'
+                        Release to use (if template is 'download')
     -a arch             
-                        Architecture to use if template is 'download'
+                        Architecture to use (if template is 'download')
     -f config-file      
                         Use a custom config file in addition to the default
                         configuration (usually /etc/lxc/default.conf)
@@ -59,8 +61,10 @@ Options:
                         configuration source, without prepending any defaults
     -y
                         Don't prompt for confirmation
-    lxc-options         
-                        Options to forward to the lxc-create *template*
+    lxc-create-options         
+                        Options to forward to the lxc-create command
+    lxc-template-options
+                        Options to forward to the lxc template
 EOF
 }
 
@@ -100,14 +104,17 @@ done
 
 shift $(( OPTIND - 1 ))
 
-if (( $# )); then
-    if [[ "$1" != -- ]]; then
-        err_m "invalid parameters: you must precede lxc options with double dashes"
-        exit 1
-    else
+declare -a lxc_create_opts
+
+while (( $# )); do
+    if [[ "$1" == -- ]]; then
         shift
+        break
     fi
-fi
+
+    lxc_create_opts+=("$1")
+    shift
+done
 
 if [[ -z "$template" ]]; then
     print_help
