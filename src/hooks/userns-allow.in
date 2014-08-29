@@ -9,7 +9,7 @@ for lib in misc id_map; do
 done
 
 lxc_hook_check_params "$@"
-if [[ "$lxc_hook_type" != pre-start ]]; then
+if [[ "$lxc_hook_type" != pre-start|clone ]]; then
     exit 1
 fi
 

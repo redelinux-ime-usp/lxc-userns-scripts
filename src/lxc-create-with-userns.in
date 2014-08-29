@@ -211,6 +211,7 @@ lxc_cfg_userns_set "$cfg_path" "new" "new"
 
 cat >> "$cfg_path" <<EOF
 lxc.hook.clone = @pkgdatadir@/hooks/userns-convert
+lxc.hook.clone = @pkgdatadir@/hooks/userns-allow
 lxc.hook.clone = @pkgdatadir@/hooks/sysprep
 lxc.hook.pre-start = @pkgdatadir@/hooks/userns-allow
 EOF
