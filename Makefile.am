@@ -1,8 +1,8 @@
 SUBDIRS = src
 
 doc-pak: README LICENSE
-    mkdir -p $@
-    cp $? $@/
+	mkdir -p $@
+	cp $? $@/
 
 deb: description-pak doc-pak
 	checkinstall -t debian --install=no --fstrans \
