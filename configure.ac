@@ -14,6 +14,7 @@ AC_CONFIG_FILES([
 	src/hooks/Makefile
 	src/hooks/sysprep
 	src/hooks/userns-convert
+	src/hooks/userns-allow
 	src/lib/Makefile
 	src/lib/cfg.sh
 	src/lib/id_map.sh
