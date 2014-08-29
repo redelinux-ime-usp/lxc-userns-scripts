@@ -9,9 +9,12 @@ for lib in misc id_map; do
 done
 
 lxc_hook_check_params "$@"
-if [[ "$lxc_hook_type" != pre-start|clone ]]; then
+case "$lxc_hook_type" in
+pre-start|clone) ;;
+*)
+    err_m "invalid hook type '${lxc_hook_type}'"
     exit 1
-fi
+esac
 
 id_map_add_from_lxc_cfg "$LXC_CONFIG_FILE"
 id_map_commit
