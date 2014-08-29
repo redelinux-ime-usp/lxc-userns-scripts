@@ -13,4 +13,5 @@ deb: description-pak doc-pak
 	--maintainer='"Daniel Miranda <danielkza2@gmail.com>"' \
 	--requires=lxc,lxc-templates,bash,libc6
 
-CLEANFILES = doc-pak
+mostlyclean-local:
+	-rm -rf doc-pak
