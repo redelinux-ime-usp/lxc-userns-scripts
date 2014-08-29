@@ -1,3 +1,5 @@
+#!/bin/bash
+
 prefix="@prefix@"
 datarootdir="@datarootdir@"
 . "@pkgdatadir@/lib/misc.sh" || exit 1
