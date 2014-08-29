@@ -68,6 +68,17 @@ Options:
 EOF
 }
 
+get_system_arch()
+{
+    if [[ -f "/etc/debian_version" ]]; then
+        dpkg --print-architecture 2>/dev/null
+    elif [[ -f "/etc/redhat-release" ]]; then
+        rpm -q kernel --queryformat="%{ARCH}\n" 2>/dev/null | head -n1
+    else
+        uname -m
+    fi
+}
+
 ###
 
 if ! (( $# )); then
@@ -78,7 +89,7 @@ fi
 no_default_config=0
 yes=0
 template=download
-arch=$(dpkg --print-architecture)
+arch=$(get_system_arch)
 
 while getopts "hn:t:d:r:a:f:xy" opt; do
     case "$opt" in
