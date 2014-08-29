@@ -137,7 +137,7 @@ if [[ -n "$config_file"  && ! -f "$config_file" ]]; then
     exit 1
 fi
 
-name_re='^[[:alpha:]][[:alnum:]]*$'
+name_re='^[[:alpha:]][[:alnum:]-]*$'
 if ! [[ "$name" =~ $name_re ]]; then
     err_m "invalid container name"
     exit 1
