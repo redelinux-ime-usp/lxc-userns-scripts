@@ -75,3 +75,9 @@ echo "- RSA"
 ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_dsa_key" -N '' -t dsa
 echo "- ECDSA"
 ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_ecdsa_key" -N '' -t ecdsa -b 521
+
+###
+
+echo "Cleaning up Puppet certificates"
+
+rm -rf ${lxc_rootfs}/{etc/puppet,var/lib/puppet}/ssl 
