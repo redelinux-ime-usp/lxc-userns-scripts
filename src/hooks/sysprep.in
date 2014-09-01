@@ -86,7 +86,7 @@ rm -rf ${lxc_rootfs}/{etc/puppet,var/lib/puppet}/ssl
 
 echo "Applying new root password"
 
-new_pw=$(openssl rand -base64 18)
-chroot "$lxc_rootfs" -- chpasswd <<< "root:${new_pw}"
+new_pw=$(openssl rand -base64 18 2>/dev/null)
+chroot "$lxc_rootfs" chpasswd <<< "root:${new_pw}"
 
 echo "- New password: ${new_pw}"
