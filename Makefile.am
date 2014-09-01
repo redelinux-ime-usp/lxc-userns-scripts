@@ -11,7 +11,7 @@ deb: description-pak doc-pak
 	--pkggroup=admin \
 	--pkglicense=GPL \
 	--maintainer='"Daniel Miranda <danielkza2@gmail.com>"' \
-	--requires=lxc,lxc-templates,bash,libc6
+	--requires=libc6,bash,lxc,lxc-templates,openssl
 
 mostlyclean-local:
 	-rm -rf doc-pak
