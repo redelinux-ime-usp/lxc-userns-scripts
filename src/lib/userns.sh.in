@@ -1,3 +1,5 @@
+#!/bin/bash
+
 prefix="@prefix@"
 datarootdir="@datarootdir@"
 for lib in misc id_map cfg; do
@@ -80,10 +82,8 @@ lxc_fs_userns_apply()
         return 0
     fi
 
-    local uidmapshift=$(lxc_fs_check_uidmapshift)
- 
     if [[ "$uid_map" == "$gid_map" ]]; then
-        $uidmapshift -b "$rootfs" $uid_map
+        uidmapshift -b "$rootfs" $uid_map
     else
         [[ -z "$uid_map" ]] || $uidmapshift -u "$rootfs" $uid_map
         [[ -z "$gid_map" ]] || $uidmapshift -g "$rootfs" $gid_map

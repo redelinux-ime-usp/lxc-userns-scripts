@@ -68,6 +68,17 @@ Options:
 EOF
 }
 
+get_system_arch()
+{
+    if [[ -f "/etc/debian_version" ]]; then
+        dpkg --print-architecture 2>/dev/null
+    elif [[ -f "/etc/redhat-release" ]]; then
+        rpm -q kernel --queryformat="%{ARCH}\n" 2>/dev/null | head -n1
+    else
+        uname -m
+    fi
+}
+
 ###
 
 if ! (( $# )); then
@@ -78,7 +89,7 @@ fi
 no_default_config=0
 yes=0
 template=download
-arch=$(dpkg --print-architecture)
+arch=$(get_system_arch)
 
 while getopts "hn:t:d:r:a:f:xy" opt; do
     case "$opt" in
@@ -126,7 +137,7 @@ if [[ -n "$config_file"  && ! -f "$config_file" ]]; then
     exit 1
 fi
 
-name_re='^[[:alpha:]][[:alnum:]]*$'
+name_re='^[[:alpha:]][[:alnum:]-]*$'
 if ! [[ "$name" =~ $name_re ]]; then
     err_m "invalid container name"
     exit 1
@@ -200,7 +211,9 @@ lxc_cfg_userns_set "$cfg_path" "new" "new"
 
 cat >> "$cfg_path" <<EOF
 lxc.hook.clone = @pkgdatadir@/hooks/userns-convert
+lxc.hook.clone = @pkgdatadir@/hooks/userns-allow
 lxc.hook.clone = @pkgdatadir@/hooks/sysprep
+lxc.hook.pre-start = @pkgdatadir@/hooks/userns-allow
 EOF
 
 if ! (( yes )) && confirm "Do you wish to verify the configuration file before creation?"; then

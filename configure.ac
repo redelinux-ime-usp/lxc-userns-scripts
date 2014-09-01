@@ -1,4 +1,4 @@
-AC_INIT([lxc-userns-scripts], [0.1], [lxc-userns-scripts])
+AC_INIT([lxc-userns-scripts], [0.3], [lxc-userns-scripts])
 AM_INIT_AUTOMAKE([subdir-objects foreign -Wall -Werror])
 
 AC_CONFIG_SRCDIR([src/lxc-create-with-userns.in])
@@ -14,6 +14,7 @@ AC_CONFIG_FILES([
 	src/hooks/Makefile
 	src/hooks/sysprep
 	src/hooks/userns-convert
+	src/hooks/userns-allow
 	src/lib/Makefile
 	src/lib/cfg.sh
 	src/lib/id_map.sh

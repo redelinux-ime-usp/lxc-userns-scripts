@@ -1,3 +1,5 @@
+#!/bin/bash
+
 info_m() { echo "Info:" "$@" >&2; }
 err_m() { echo "Error:" "$@" >&2; }
 warn_m() { echo "Warn:" "$@" >&2; }

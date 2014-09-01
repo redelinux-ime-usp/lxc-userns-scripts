@@ -1,6 +1,10 @@
+#!/bin/bash
+
 prefix="@prefix@"
 datarootdir="@datarootdir@"
-. "@pkgdatadir@/lib/misc.sh" || exit 1
+for lib in misc cfg; do
+    . "${datarootdir}/lxc-userns-scripts/lib/${lib}.sh" || exit 1
+done
 
 ID_MAP_USER_FILE=/etc/subuid
 ID_MAP_USER_FILE_BKP="${ID_MAP_USER_FILE}.lxc-backup"

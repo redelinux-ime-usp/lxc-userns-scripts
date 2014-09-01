@@ -12,6 +12,7 @@ done
 
 lxc_hook_check_params "$@"
 if [[ "$lxc_hook_type" != clone ]]; then
+    err_m "invalid hook type '${lxc_hook_type}'"
     exit 1
 fi
 
