@@ -1,6 +1,6 @@
 SUBDIRS = src
 
-doc-pak: README LICENSE
+doc-pak: README LICENSE INSTALL
 	mkdir -p $@
 	cp $? $@/
 

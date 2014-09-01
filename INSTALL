@@ -1,0 +1,10 @@
+lxc-userns-scripts
+
+Installation procedure
+
+This project uses autotools for it's build system. autoconf and automake are
+necessary for the build, and a basic C compiler and C library too.
+
+The procedure is the usual `./configure && make && make install`. If your system
+includes the `checkinstall` program, you can substitute `make install` for
+`make deb`, which will generate a Debian package for later installation.
