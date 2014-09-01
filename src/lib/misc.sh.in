@@ -55,7 +55,7 @@ lxc_hook_check_params()
 
     lxc_fs_check_dir "$rootfs" || return 1
 
-    eval "lxc_hook_container"=\$_container
+    eval "lxc_container_name"=\$_container
     eval "lxc_hook_type"=\$_hook_type
     eval "lxc_rootfs"=\$rootfs
 
