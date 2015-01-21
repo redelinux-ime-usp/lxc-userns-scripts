@@ -46,7 +46,7 @@ lxc_fs_userns_apply()
 (
     set -e
 
-    local config_file="$1" rootfs="$2"
+    local container_name="$1" config_file="$2" rootfs="$3"
     lxc_cfg_check_file "$config_file"
     
     local uid_map gid_map
@@ -80,6 +80,12 @@ lxc_fs_userns_apply()
     # if no mappings are specified
     if [[ -z "$uid_map" && -z "$gid_map" ]]; then
         return 0
+    fi
+
+    local config_dir=$(readlink -f "${config_file}/..")
+    if [ -n "$uid_dest" ] && [ -n "$gid_dest" ] && \
+       [ "$(basename "$config_dir")" == "$container_name" ]; then
+        chown "$uid_dest":"$gid_dest" "$config_dir"
     fi
 
     if [[ "$uid_map" == "$gid_map" ]]; then

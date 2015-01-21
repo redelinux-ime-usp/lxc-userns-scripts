@@ -41,4 +41,4 @@ if [[ -n "$new_gid_map" ]]; then
     info_m "New group mapping: ${new_gid_map}"
 fi
 
-lxc_fs_userns_apply "$LXC_CONFIG_FILE" "$lxc_rootfs"
+lxc_fs_userns_apply "$LXC_NAME" "$LXC_CONFIG_FILE" "$lxc_rootfs"
