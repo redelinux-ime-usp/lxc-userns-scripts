@@ -1,4 +1,4 @@
-AC_INIT([lxc-userns-scripts], [0.3], [lxc-userns-scripts])
+AC_INIT([lxc-userns-scripts], [0.4], [lxc-userns-scripts])
 AM_INIT_AUTOMAKE([subdir-objects foreign -Wall -Werror])
 
 AC_CONFIG_SRCDIR([src/lxc-create-with-userns.in])
