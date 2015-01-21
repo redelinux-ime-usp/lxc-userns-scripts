@@ -29,8 +29,10 @@ fi
 
 echo "Setting up hostname"
 
-echo "$container" > "${lxc_rootfs}/etc/hostname"
-sed -i -r "s/ ${LXC_SRC_NAME}([[:blank:]]|\$)/ ${container}\\1/" \
+# LXC should do this already
+# echo "$lxc_container" > "${lxc_rootfs}/etc/hostname"
+
+sed -i -r "s/ ${LXC_SRC_NAME}([[:blank:]]|\$)/ ${lxc_container}\\1/" \
  "${lxc_rootfs}/etc/hosts"
 
 ###
@@ -67,6 +69,24 @@ echo "Recreating SSH host keys"
 
 rm -f ${lxc_rootfs}/etc/ssh/*_host_*
 
+echo "- DSA"
 ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_rsa_key" -N '' -t rsa
+echo "- RSA"
 ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_dsa_key" -N '' -t dsa
+echo "- ECDSA"
 ssh-keygen -f "${lxc_rootfs}/etc/ssh/ssh_host_ecdsa_key" -N '' -t ecdsa -b 521
+
+###
+
+echo "Cleaning up Puppet certificates"
+
+rm -rf ${lxc_rootfs}/{etc/puppet,var/lib/puppet}/ssl 
+
+###
+
+echo "Applying new root password"
+
+new_pw=$(openssl rand -base64 18 2>/dev/null)
+chroot "$lxc_rootfs" chpasswd <<< "root:${new_pw}"
+
+echo "- New password: ${new_pw}"

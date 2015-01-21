@@ -1,0 +1,29 @@
+lxc-userns-scripts
+
+Convenience scripts for creating user-namespace isolated Linux containers
+
+These utility scripts and hooks are intended for the specific use case of
+running user-namespace isolated container, but not necessarily wanting to create
+new containers from secondary users. This way features like auto-starting still
+work properly.
+
+The main script is `lxc-create-with-userns`: it is mostly a wrapper around
+lxc-create that will do all the necessary work of finding and unused UID and GID
+range, enabling it in shadow's configuration files, and creating a compatible
+container file. Some useful hooks will also be automatically added to new
+containers to allow them to be cloned succesfully into new namespaces.
+
+The hooks included, follow by their respective allowed hook types, are:
+
+userns-allow (clone|pre-start)
+    Applies the configuration needed for the creation of new usernamespaces for
+    containers, creating new ones in case of a clone, to make sure thei work
+    properly, and that other hooks can enter the namespaces to do their work.
+userns-convert (clone)
+    Converts a cloned container to a new user namespace, shifting all the file
+    ownerships on the rootfs to the new ranges.
+sysprep (clone)
+    Cleans up per-instance configuration from containers, like shell history,
+    ssh keys, puppet certificates, DHCP leases. It also generates a new root
+    password. Since it's user-namespace aware, it must be called *after*
+    userns-allow or it won't be able to enter the namespace.
