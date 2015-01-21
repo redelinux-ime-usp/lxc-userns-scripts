@@ -82,7 +82,7 @@ lxc_fs_userns_apply()
         return 0
     fi
 
-    local config_dir=$(readlink -f "${config_file}/..")
+    local config_dir=$(readlink -f "$(dirname "$config_file")")
     if [ -n "$uid_dest" ] && [ -n "$gid_dest" ] && \
        [ "$(basename "$config_dir")" == "$container_name" ]; then
         chown "$uid_dest":"$gid_dest" "$config_dir"
