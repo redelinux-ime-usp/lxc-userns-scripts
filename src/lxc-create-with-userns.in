@@ -237,7 +237,7 @@ if [[ "$template" == download ]]; then
     template_params="-d ${dist} -r ${release} -a ${arch}"
 fi
 
-if lxc-create -n "${name}" -f "${cfg_path}" -B zfs \
+if lxc-create -n "${name}" -f "${cfg_path}" \
    -o "${cfg_dir}/create.log" -l INFO \
    -t "$template" -- $template_params "$@"
 then
